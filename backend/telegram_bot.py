@@ -30,6 +30,7 @@ from telegram.constants import ChatAction
 from chat_agent import chat_with_bot
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(update.message.message_id)
     user = update.message.from_user
     chat_id = update.effective_chat.id
     text = update.message.text
@@ -65,10 +66,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
 
 async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(update.message.reply_to_message)
     await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
+saved_history = [
+    {"role": "user", "text": "Hello"},
+    {"role": "bot", "text": "Hi! How can I help?"},
+    {"role": "user", "text": "Tell me a joke"},
+    {"role": "bot", "text": "Why did the chicken cross the road? To get to the other side!"},
+]
 
 async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
+    chat_id = update.effective_chat.id
+
+    # Replay each message in order
+    for i,msg in enumerate(saved_history):
+        prefix = "👤 You: " if msg["role"] == "user" else "🤖 Bot: "
+        print(i)
+        await context.bot.send_message(chat_id=chat_id, text=prefix + msg["text"], reply_to_message_id=i+900)
 
 async def takeover(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
