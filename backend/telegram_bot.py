@@ -7,6 +7,8 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from telegram.constants import ChatAction
 from multiprocessing import Process
 from chat_agent import chat_with_bot
+from utils import supabase
+
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
@@ -21,14 +23,6 @@ async def typing_action(chat_id: int, context: ContextTypes.DEFAULT_TYPE, stop_e
     except Exception as e:
         print("Typing task stopped with error:", e)
 
-
-import threading
-import time
-from telegram import Update
-from telegram.ext import ContextTypes
-from telegram.constants import ChatAction
-from chat_agent import chat_with_bot
-
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(update.message.message_id)
     user = update.message.from_user
@@ -40,7 +34,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # This will hold the result
     result = {}
 
-    # Define a wrapper to run chat_with_bot in a thread
+    result['answer'] = ""
     def bot_thread():
         result['answer'] = chat_with_bot(chat_id, user, text)
 
@@ -66,23 +60,42 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
 
 async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(update.message.reply_to_message)
-    await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
-saved_history = [
-    {"role": "user", "text": "Hello"},
-    {"role": "bot", "text": "Hi! How can I help?"},
-    {"role": "user", "text": "Tell me a joke"},
-    {"role": "bot", "text": "Why did the chicken cross the road? To get to the other side!"},
-]
+    try:
+        if update.message.from_user.id is not 7113794985:
+            return
+        histories = supabase.table("chat_history")\
+                    .select("id, username, message, document_ids")\
+                    .order("created_at")\
+                    .limit(60)\
+                    .execute()
+        
+        item = next((d for d in histories.data if d["message"] == update.message.reply_to_message.text.split(": ", 1)[1]), None)
+        if item is None:
+            return
+        
+        supabase.table("flag_answer").insert({"message":item["message"], "document_ids":item["document_ids"]}).execute()
+        print("successfully flaged!")
+        
+    except Exception as e:
+        print("Typing action error:", e)
+
 
 async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.from_user.id is not 7113794985:
+        return
     chat_id = update.effective_chat.id
-
-    # Replay each message in order
-    for i,msg in enumerate(saved_history):
-        prefix = "👤 You: " if msg["role"] == "user" else "🤖 Bot: "
-        print(i)
-        await context.bot.send_message(chat_id=chat_id, text=prefix + msg["text"], reply_to_message_id=i+900)
+    try:
+        histories = supabase.table("chat_history")\
+                    .select("id, username, role, message")\
+                    .order("created_at")\
+                    .limit(50)\
+                    .execute()
+        # Replay each message in order
+        for msg in histories.data:
+            prefix = f"👤{msg["username"]}: " if msg["role"] == "user" else "🤖 Bot: "
+            await context.bot.send_message(chat_id=chat_id, text=prefix + msg["message"])
+    except:
+        context.bot.send_message(chat_id=chat_id, text="Now you can't see history")
 
 async def takeover(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
