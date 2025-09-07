@@ -154,10 +154,9 @@ def process_file(file_storage_path, file_name, file_path, file_type, user_id):
     chunks = chunk_text(text)
 
     embeddings = embed_text(chunks)
-
+    data = []
     for i, embedding in enumerate(embeddings):
-
-        supabase.table("documents").insert({
+        data.append({
             "user_id": user_id,
             "file_name": file_name,
             "file_path" : file_path,
@@ -166,7 +165,9 @@ def process_file(file_storage_path, file_name, file_path, file_type, user_id):
             "content": chunks[i],
             "chunk_index": i,
             "embedding": embedding
-        }).execute()
+        })
+
+    supabase.table("documents").insert(data).execute()
 
 
 def process_file_in_thread(file_storage_path, file_name, file_path, file_type, user_id, file_id, callback=None):
@@ -206,6 +207,35 @@ def on_process_complete(file_id, file_type, error):
         except Exception as e:
             print({"error": f"Update status failed: {str(e)}"})
 
+def on_update_embedding_complete(error=None):
+    if error:
+        print(f"❌ Process failed: {error}")
+    else:
+        print("✅ update embedding finished successfully")
+
+
+def update_embedding(ducument_id):
+    content = supabase.table("documents")\
+                    .select("content")\
+                    .eq("id", ducument_id)\
+                    .execute()
+    embeddings = embed_text([content.data[0]["content"]])
+    (supabase.table("documents").update({"embedding": embeddings[0]}).eq("id", ducument_id).execute())
+
+def process_update_embedding_in_thread(document_id, callback=None):
+    def wrapper():
+        try:
+            update_embedding(document_id)
+            if callback:
+                callback()  # success
+        except Exception as e:
+            if callback:
+                callback(e)  # error
+
+    thread = threading.Thread(target=wrapper, daemon=True)
+    thread.start()
+    return thread
+
 
 
 flask_app = Flask("Coaching-AI")
@@ -241,6 +271,19 @@ def process_link_request():
     file_id = data.get("video_link_id")
     
     process_file_in_thread(file_storage_path, file_name, file_path, file_type, user_id, file_id, callback=on_process_complete)
+
+    return jsonify({
+        "status": "success"
+    })
+
+
+@flask_app.route("/update-embedding", methods=["POST"])
+def process_update_embedding():
+    data = request.json
+    
+    document_id = data.get("document_id")
+    
+    process_update_embedding_in_thread(document_id, callback=on_update_embedding_complete)
 
     return jsonify({
         "status": "success"

@@ -7,7 +7,8 @@ import {
   Download, 
   Settings, 
   MessageCircle,
-  LogOut
+  LogOut,
+  Flag
 } from 'lucide-react'
 
 export default function Sidebar() {
@@ -17,6 +18,7 @@ export default function Sidebar() {
     { name: 'Overview', href: '/dashboard', icon: Home },
     { name: 'Upload Data', href: '/dashboard/upload', icon: Upload },
     { name: 'View Logs', href: '/dashboard/logs', icon: MessageSquare },
+    { name: 'Flagged Answers', href: '/dashboard/flagged', icon: Flag },
     { name: 'Export Data', href: '/dashboard/export', icon: Download },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ]

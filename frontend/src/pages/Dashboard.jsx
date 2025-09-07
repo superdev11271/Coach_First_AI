@@ -4,6 +4,8 @@ import Header from '../components/Header'
 import Overview from './dashboard/Overview'
 import UploadData from './dashboard/UploadData'
 import ViewLogs from './dashboard/ViewLogs'
+import FlaggedAnswers from './dashboard/FlaggedAnswers'
+import ProcessFlaggedAnswer from './dashboard/ProcessFlaggedAnswer'
 import ExportData from './dashboard/ExportData'
 import Settings from './dashboard/Settings'
 
@@ -18,6 +20,8 @@ export default function Dashboard() {
             <Route path="/" element={<Overview />} />
             <Route path="/upload" element={<UploadData />} />
             <Route path="/logs" element={<ViewLogs />} />
+            <Route path="/flagged" element={<FlaggedAnswers />} />
+            <Route path="/flagged/:id" element={<ProcessFlaggedAnswer />} />
             <Route path="/export" element={<ExportData />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

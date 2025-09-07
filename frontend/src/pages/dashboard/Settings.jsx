@@ -8,9 +8,7 @@ import {
   Save, 
   Bot, 
   MessageCircle,
-  Shield,
-  Bell,
-  Globe
+  Shield
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -35,18 +33,13 @@ export default function Settings() {
 
   const [botSettings, setBotSettings] = useState({
     mode: 'bot', // 'bot' or 'direct'
-    autoResponse: true,
-    responseDelay: 2,
-    language: 'en',
-    notifications: true
+    autoResponse: true
   })
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'bot', label: 'Bot Settings', icon: Bot },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'general', label: 'General', icon: Globe }
+    { id: 'bot', label: 'Bot Settings', icon: Bot }
   ]
 
   const handleProfileChange = (e) => {
@@ -340,129 +333,11 @@ export default function Settings() {
             </p>
           </div>
 
-          {/* Response Delay */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Response Delay (seconds)
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="10"
-              value={botSettings.responseDelay}
-              onChange={(e) => handleBotSettingChange('responseDelay', parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>Instant</span>
-              <span>{botSettings.responseDelay}s</span>
-              <span>10s</span>
-            </div>
-          </div>
-
-          {/* Language */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bot Language
-            </label>
-            <select
-              value={botSettings.language}
-              onChange={(e) => handleBotSettingChange('language', e.target.value)}
-              className="input-field"
-            >
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-              <option value="it">Italian</option>
-            </select>
-          </div>
         </div>
       </div>
     </div>
   )
 
-  const renderNotificationsTab = () => (
-    <div className="space-y-6">
-      <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Notification Preferences</h3>
-        
-        <div className="space-y-4">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={botSettings.notifications}
-              onChange={(e) => handleBotSettingChange('notifications', e.target.checked)}
-              className="mr-3 text-primary-600 focus:ring-primary-500"
-            />
-            <span className="text-sm font-medium text-gray-900">Enable Notifications</span>
-          </label>
-          
-          <div className="ml-6 space-y-3">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                defaultChecked
-                className="mr-3 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700">New user messages</span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                defaultChecked
-                className="mr-3 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700">File upload notifications</span>
-            </label>
-            
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                defaultChecked
-                className="mr-3 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700">System updates</span>
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderGeneralTab = () => (
-    <div className="space-y-6">
-      <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">General Settings</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Time Zone
-            </label>
-            <select className="input-field">
-              <option value="utc">UTC</option>
-              <option value="est">Eastern Time</option>
-              <option value="pst">Pacific Time</option>
-              <option value="gmt">GMT</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date Format
-            </label>
-            <select className="input-field">
-              <option value="mm/dd/yyyy">MM/DD/YYYY</option>
-              <option value="dd/mm/yyyy">DD/MM/YYYY</option>
-              <option value="yyyy-mm-dd">YYYY-MM-DD</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -472,10 +347,6 @@ export default function Settings() {
         return renderSecurityTab()
       case 'bot':
         return renderBotTab()
-      case 'notifications':
-        return renderNotificationsTab()
-      case 'general':
-        return renderGeneralTab()
       default:
         return renderProfileTab()
     }

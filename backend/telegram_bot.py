@@ -61,19 +61,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        if update.message.from_user.id is not 7113794985:
+        if update.message.from_user.id != 7113794985:
             return
         histories = supabase.table("chat_history")\
-                    .select("id, username, message, document_ids")\
+                    .select("id, username,role, message, document_ids")\
                     .order("created_at")\
                     .limit(60)\
                     .execute()
+        index = None
+        for i, d in enumerate(histories.data):
+            if d["message"] == update.message.reply_to_message.text.split(": ", 1)[1]:
+                index = i
         
-        item = next((d for d in histories.data if d["message"] == update.message.reply_to_message.text.split(": ", 1)[1]), None)
-        if item is None:
+        print(index)
+        if index == None or index - 1 < 0 or histories.data[index]["role"] != "bot":
             return
-        
-        supabase.table("flag_answer").insert({"message":item["message"], "document_ids":item["document_ids"]}).execute()
+        print(index)
+        item = histories.data[index]
+        supabase.table("flagged_answers").insert({"question":histories.data[index - 1]["message"], "answer":item["message"], "document_ids":item["document_ids"]}).execute()
         print("successfully flaged!")
         
     except Exception as e:
@@ -81,7 +86,7 @@ async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.id is not 7113794985:
+    if update.message.from_user.id != 7113794985:
         return
     chat_id = update.effective_chat.id
     try:
@@ -98,11 +103,21 @@ async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.bot.send_message(chat_id=chat_id, text="Now you can't see history")
 
 async def takeover(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.from_user.id != 7113794985:
+        await update.message.reply_text("Hello! I am coach-firat AI bot.")
+        return
     await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
 
 
 # Handler for /help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.from_user.id != 7113794985:
+        await update.message.reply_text("""
+                                    Available commands:\n
+                                    /start - start bot\n
+                                    /help - this help \n
+                                    """)
+        return
     await update.message.reply_text("""
                                     Available commands:\n
                                     /start - start bot\n
