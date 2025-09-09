@@ -1,8 +1,10 @@
 import { useLocation } from 'react-router-dom'
-import { Bell, Search } from 'lucide-react'
+import { Bell, BellOff, Search } from 'lucide-react'
+import { useNotification } from '../contexts/NotificationContext'
 
 export default function Header() {
   const location = useLocation()
+  const { notificationsEnabled, toggleNotifications } = useNotification()
   
   const getPageTitle = () => {
     const path = location.pathname
@@ -25,18 +27,23 @@ export default function Header() {
         </div>
         
         <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-            />
-          </div>
-          
-          <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+          <button 
+            onClick={toggleNotifications}
+            className={`relative p-2 transition-colors duration-200 ${
+              notificationsEnabled 
+                ? 'text-gray-600 hover:text-gray-800' 
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+            title={notificationsEnabled ? 'Notifications enabled - Click to disable' : 'Notifications disabled - Click to enable'}
+          >
+            {notificationsEnabled ? (
+              <Bell className="h-5 w-5" />
+            ) : (
+              <BellOff className="h-5 w-5" />
+            )}
+            {notificationsEnabled && (
+              <span className="absolute top-1 right-1 h-2 w-2 bg-green-500 rounded-full"></span>
+            )}
           </button>
         </div>
       </div>

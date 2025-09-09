@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }) => {
         toast.error('Could not verify email. Please try again.')
         return { user: null, error: new Error('Could not verify email. Please try again.') }
       }
-      
+
       if (emailAlreadyUsed) {
         toast.error('This email is already registered.')
         return { user: null, error: new Error('This email is already registered.') }
@@ -79,10 +79,10 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
         options: {
-          data: profileData
+          data: { ...profileData, is_bot: true }
         }
       })
-      
+
       if (error) {
         toast.error(error.message)
         return { error: error.message }
@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
   const signIn = async (email, password) => {
     try {
       setLoading(true)
-      
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -137,7 +137,7 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut()
-      
+
       if (error) {
         toast.error(error.message)
         return { error: error.message }
@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }) => {
   const resetPassword = async (email) => {
     try {
       setLoading(true)
-      
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`
       })
@@ -177,11 +177,41 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Verify current password function
+  const verifyCurrentPassword = async (currentPassword) => {
+    try {
+      if (!user?.email) {
+        return { error: 'User email not found' }
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword
+      })
+
+      if (error) {
+        return { error: 'Current password is incorrect' }
+      }
+
+      return { error: null }
+    } catch (error) {
+      console.error('Verify password error:', error)
+      return { error: 'Failed to verify current password' }
+    }
+  }
+
   // Update password function
-  const updatePassword = async (newPassword) => {
+  const updatePassword = async (currentPassword, newPassword) => {
     try {
       setLoading(true)
-      
+
+      // First verify the current password
+      const { error: verifyError } = await verifyCurrentPassword(currentPassword)
+      if (verifyError) {
+        toast.error(verifyError)
+        return { error: verifyError }
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       })
@@ -191,7 +221,7 @@ export const AuthProvider = ({ children }) => {
         return { error: error.message }
       }
 
-      toast.success('Password updated successfully!')
+
       return { error: null }
     } catch (error) {
       console.error('Update password error:', error)
@@ -206,7 +236,7 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (updates) => {
     try {
       setLoading(true)
-      
+
       const { data, error } = await supabase.auth.updateUser({
         data: updates
       })
@@ -218,7 +248,6 @@ export const AuthProvider = ({ children }) => {
 
       if (data.user) {
         setUser(data.user)
-        toast.success('Profile updated successfully!')
         return { user: data.user, error: null }
       }
 
@@ -236,7 +265,7 @@ export const AuthProvider = ({ children }) => {
   const getUserProfile = async () => {
     try {
       if (!user) return null
-      
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -262,6 +291,7 @@ export const AuthProvider = ({ children }) => {
     signIn,
     signOut,
     resetPassword,
+    verifyCurrentPassword,
     updatePassword,
     updateProfile,
     getUserProfile,

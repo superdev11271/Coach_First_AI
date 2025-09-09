@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { 
   Users, 
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { getAvatarColorFromString } from '../../utils/avatarColors'
 import toast from 'react-hot-toast'
+import ReactMarkdown from 'react-markdown'
 
 export default function ViewLogs() {
   const { supabase } = useAuth()
@@ -26,10 +27,12 @@ export default function ViewLogs() {
   const [loadingMessages, setLoadingMessages] = useState(false)
 
   const periods = [
+    { value: 'all', label: 'All Time' },
     { value: 'today', label: 'Today' },
     { value: 'week', label: 'This Week' },
     { value: 'month', label: 'This Month' },
-    { value: 'all', label: 'All Time' },
+    { value: 'quarter', label: 'This Quarter' },
+    { value: 'year', label: 'This Year' },
   ]
 
   // Fetch all unique users from chat history
@@ -145,6 +148,37 @@ export default function ViewLogs() {
     })
   }
 
+  // Filter chat messages based on selected time period using useMemo for performance
+  const filteredChatMessages = useMemo(() => {
+    if (selectedPeriod === 'all') return chatMessages
+
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    
+    return chatMessages.filter(message => {
+      const messageDate = new Date(message.created_at)
+      
+      switch (selectedPeriod) {
+        case 'today':
+          return messageDate >= today
+        case 'week':
+          const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+          return messageDate >= weekAgo
+        case 'month':
+          const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+          return messageDate >= monthAgo
+        case 'quarter':
+          const quarterAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000)
+          return messageDate >= quarterAgo
+        case 'year':
+          const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000)
+          return messageDate >= yearAgo
+        default:
+          return true
+      }
+    })
+  }, [chatMessages, selectedPeriod])
+
   // Format timestamp
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp)
@@ -180,9 +214,9 @@ export default function ViewLogs() {
   }, [fetchUsers])
 
   return (
-    <div className="h-[calc(100vh-200px)] flex bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="h-[calc(100vh-200px)] flex flex-col lg:flex-row bg-white rounded-lg border border-gray-200 overflow-hidden">
       {/* Users Sidebar */}
-      <div className="w-80 border-r border-gray-200 flex flex-col">
+      <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col h-1/2 lg:h-full">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
@@ -277,7 +311,7 @@ export default function ViewLogs() {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-1/2 lg:h-full">
         {selectedUser ? (
           <>
             {/* Chat Header */}
@@ -293,7 +327,7 @@ export default function ViewLogs() {
                       <Phone className="w-3 h-3 text-gray-400" />
                       <p className="text-xs text-gray-500">{selectedUser.username}</p>
                       <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                        {selectedUser.messageCount} messages
+                        {filteredChatMessages.length} of {selectedUser.messageCount} messages
                       </span>
                     </div>
                   </div>
@@ -305,44 +339,73 @@ export default function ViewLogs() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 bg-gray-50">
               {loadingMessages ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500 mx-auto mb-2"></div>
                   <p className="text-sm text-gray-500">Loading messages...</p>
                 </div>
-              ) : chatMessages.length === 0 ? (
+              ) : filteredChatMessages.length === 0 ? (
                 <div className="text-center py-8">
                   <MessageSquare className="mx-auto h-8 w-8 text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500">No messages found</p>
+                  <p className="text-sm text-gray-500">
+                    {chatMessages.length === 0 ? 'No messages found' : 'No messages found for selected time period'}
+                  </p>
                 </div>
               ) : (
-                chatMessages.map((message) => (
+                filteredChatMessages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className="flex items-start space-x-2 max-w-xs lg:max-w-md">
-                      {message.role === 'assistant' && (
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                          <Bot className="w-3 h-3 text-white" />
-                        </div>
-                      )}
-                      
-                      <div
-                        className={`px-4 py-2 rounded-lg ${
-                          message.role === 'user'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-white text-gray-900 border border-gray-200'
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-line">{message.message}</p>
-                        <p className={`text-xs mt-1 ${
-                          message.role === 'user' ? 'text-primary-100' : 'text-gray-500'
-                        }`}>
-                          {new Date(message.created_at).toLocaleString()}
-                        </p>
-                      </div>
+                     <div className={`flex items-start space-x-2 ${
+                       message.role === 'bot' ? 'max-w-full sm:max-w-2xl lg:max-w-3xl' : 'max-w-full sm:max-w-xs lg:max-w-md'
+                     }`}>
+                       {message.role === 'bot' && (
+                         <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                           <Bot className="w-3 h-3 text-white" />
+                         </div>
+                       )}
+                       
+                       <div
+                         className={`px-4 py-2 rounded-lg w-full ${
+                           message.role === 'user'
+                             ? 'bg-primary-600 text-white'
+                             : 'bg-white text-gray-900 border border-gray-200'
+                         }`}
+                       >
+                         {message.role === 'bot' ? (
+                           <div className="text-sm prose prose-sm max-w-none w-full">
+                             <ReactMarkdown
+                               components={{
+                                 // Custom styling for markdown elements
+                                 p: ({ children }) => <p className="mb-2 last:mb-0 w-full">{children}</p>,
+                                 h1: ({ children }) => <h1 className="text-lg font-bold mb-2 w-full">{children}</h1>,
+                                 h2: ({ children }) => <h2 className="text-base font-bold mb-2 w-full">{children}</h2>,
+                                 h3: ({ children }) => <h3 className="text-sm font-bold mb-1 w-full">{children}</h3>,
+                                 ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 w-full">{children}</ul>,
+                                 ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 w-full">{children}</ol>,
+                                 li: ({ children }) => <li className="text-sm w-full">{children}</li>,
+                                 code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono w-full break-all">{children}</code>,
+                                 pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs font-mono overflow-x-auto mb-2 w-full">{children}</pre>,
+                                 blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-3 italic mb-2 w-full">{children}</blockquote>,
+                                 strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                                 em: ({ children }) => <em className="italic">{children}</em>,
+                                 a: ({ children, href }) => <a href={href} className="text-blue-600 hover:underline break-all" target="_blank" rel="noopener noreferrer">{children}</a>
+                               }}
+                             >
+                               {message.message}
+                             </ReactMarkdown>
+                           </div>
+                         ) : (
+                           <p className="text-sm whitespace-pre-line w-full">{message.message}</p>
+                         )}
+                         <p className={`text-xs mt-1 w-full ${
+                           message.role === 'user' ? 'text-primary-100' : 'text-gray-500'
+                         }`}>
+                           {new Date(message.created_at).toLocaleString()}
+                         </p>
+                       </div>
 
                       {message.role === 'user' && (
                         <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">

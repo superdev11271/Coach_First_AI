@@ -24,7 +24,6 @@ async def typing_action(chat_id: int, context: ContextTypes.DEFAULT_TYPE, stop_e
         print("Typing task stopped with error:", e)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(update.message.message_id)
     user = update.message.from_user
     chat_id = update.effective_chat.id
     text = update.message.text

@@ -61,9 +61,9 @@ def chat_with_bot(chat_id, user, question):
                 "document_ids":[]
             },
             {
-                "username": user.username,
-                "fullname": user.first_name,
-                "user_id": user.id,
+                "username": "",
+                "fullname": "Coaching AI Bot",
+                "user_id": "",
                 "chat_id": chat_id,
                 "role": "bot",
                 "message": result_msg,

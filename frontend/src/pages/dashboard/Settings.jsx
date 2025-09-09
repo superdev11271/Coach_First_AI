@@ -8,21 +8,22 @@ import {
   Save, 
   Bot, 
   MessageCircle,
-  Shield
+  Shield,
+  X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Settings() {
-  const { userProfile, updateProfile, updatePassword } = useAuth()
+  const { user, updateProfile, updatePassword } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
   const [loading, setLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
 
   const [profileData, setProfileData] = useState({
-    first_name: userProfile?.first_name || '',
-    last_name: userProfile?.last_name || '',
-    email: userProfile?.email || '',
-    telegram_id: userProfile?.telegram_id || ''
+    first_name: user?.user_metadata?.first_name || '',
+    last_name: user?.user_metadata?.last_name || '',
+    email: user?.email || '',
+    telegram_id: user?.user_metadata?.telegram_id || ''
   })
 
   const [passwordData, setPasswordData] = useState({
@@ -32,9 +33,14 @@ export default function Settings() {
   })
 
   const [botSettings, setBotSettings] = useState({
-    mode: 'bot', // 'bot' or 'direct'
+    mode: user?.user_metadata?.is_bot !== false, // true for bot mode, false for direct mode
     autoResponse: true
   })
+  const [originalBotSettings, setOriginalBotSettings] = useState({
+    mode: user?.user_metadata?.is_bot !== false
+  })
+  const [botSettingsChanged, setBotSettingsChanged] = useState(false)
+  const [botSettingsLoading, setBotSettingsLoading] = useState(false)
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -57,10 +63,16 @@ export default function Settings() {
   }
 
   const handleBotSettingChange = (setting, value) => {
-    setBotSettings({
+    const newSettings = {
       ...botSettings,
       [setting]: value
-    })
+    }
+    setBotSettings(newSettings)
+    
+    // Check if settings have changed from original
+    const hasChanged = newSettings.mode !== originalBotSettings.mode || 
+                      newSettings.autoResponse !== originalBotSettings.autoResponse
+    setBotSettingsChanged(hasChanged)
   }
 
   const handleProfileSave = async () => {
@@ -77,20 +89,57 @@ export default function Settings() {
     }
   }
 
+  const handleBotSettingsSave = async () => {
+    setBotSettingsLoading(true)
+    try {
+      const { error } = await updateProfile({
+        is_bot: botSettings.mode
+      })
+      if (!error) {
+        setOriginalBotSettings({ ...botSettings })
+        setBotSettingsChanged(false)
+        toast.success('Bot settings updated successfully!')
+      }
+    } catch (error) {
+      toast.error('Error updating bot settings')
+    } finally {
+      setBotSettingsLoading(false)
+    }
+  }
+
+  const handleBotSettingsCancel = () => {
+    setBotSettings({ ...originalBotSettings })
+    setBotSettingsChanged(false)
+  }
+
   const handlePasswordSave = async () => {
+    // Validate current password is provided
+    if (!passwordData.currentPassword.trim()) {
+      toast.error('Please enter your current password')
+      return
+    }
+
+    // Validate new passwords match
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match')
       return
     }
 
+    // Validate new password length
     if (passwordData.newPassword.length < 6) {
       toast.error('Password must be at least 6 characters long')
       return
     }
 
+    // Validate new password is different from current
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      toast.error('New password must be different from current password')
+      return
+    }
+
     setPasswordLoading(true)
     try {
-      const { error } = await updatePassword(passwordData.newPassword)
+      const { error } = await updatePassword(passwordData.currentPassword, passwordData.newPassword)
       if (!error) {
         setPasswordData({
           currentPassword: '',
@@ -155,6 +204,7 @@ export default function Settings() {
                 type="email"
                 name="email"
                 value={profileData.email}
+                disabled={true}
                 onChange={handleProfileChange}
                 className="input-field pl-10"
                 placeholder="Enter email address"
@@ -205,7 +255,7 @@ export default function Settings() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Current Password
+              Current Password <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -222,7 +272,7 @@ export default function Settings() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              New Password
+              New Password <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -239,7 +289,7 @@ export default function Settings() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm New Password
+              Confirm New Password <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -288,8 +338,8 @@ export default function Settings() {
                   type="radio"
                   name="botMode"
                   value="bot"
-                  checked={botSettings.mode === 'bot'}
-                  onChange={() => handleBotSettingChange('mode', 'bot')}
+                  checked={botSettings.mode}
+                  onChange={() => handleBotSettingChange('mode', true)}
                   className="mr-3 text-primary-600 focus:ring-primary-500"
                 />
                 <div className="flex items-center">
@@ -304,8 +354,8 @@ export default function Settings() {
                   type="radio"
                   name="botMode"
                   value="direct"
-                  checked={botSettings.mode === 'direct'}
-                  onChange={() => handleBotSettingChange('mode', 'direct')}
+                  checked={botSettings.mode === false}
+                  onChange={() => handleBotSettingChange('mode', false)}
                   className="mr-3 text-primary-600 focus:ring-primary-500"
                 />
                 <div className="flex items-center">
@@ -317,22 +367,32 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Auto Response */}
-          <div>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={botSettings.autoResponse}
-                onChange={(e) => handleBotSettingChange('autoResponse', e.target.checked)}
-                className="mr-3 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm font-medium text-gray-900">Enable Auto Response</span>
-            </label>
-            <p className="text-xs text-gray-500 mt-1 ml-6">
-              Bot will automatically respond to common questions
-            </p>
-          </div>
-
+          {/* Save/Cancel Buttons */}
+          {botSettingsChanged && (
+            <div className="pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
+                <button
+                  onClick={handleBotSettingsCancel}
+                  className="btn-secondary flex items-center"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBotSettingsSave}
+                  disabled={botSettingsLoading}
+                  className="btn-primary flex items-center"
+                >
+                  {botSettingsLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

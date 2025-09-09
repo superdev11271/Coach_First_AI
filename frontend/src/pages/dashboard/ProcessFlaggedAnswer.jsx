@@ -270,7 +270,7 @@ export default function ProcessFlaggedAnswer() {
         <div className="space-y-6">
             {/* Header */}
             <div className="card">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
                         <button
                             onClick={() => navigate('/dashboard/flagged')}
@@ -448,22 +448,22 @@ export default function ProcessFlaggedAnswer() {
             {/* Action Buttons */}
             {flaggedAnswer.status === 'not processed' && (
                 <div className="card">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h3 className="text-lg font-medium text-gray-900 mb-2">Process Flagged Answer</h3>
                             <p className="text-gray-600">Mark this flagged answer as processed or rejected</p>
                         </div>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                             <button
                                 onClick={() => updateFlaggedAnswerStatus('rejected')}
-                                className="btn-secondary flex items-center"
+                                className="btn-secondary flex items-center justify-center"
                             >
                                 <XCircle className="w-4 h-4 mr-2" />
                                 Mark as Rejected
                             </button>
                             <button
                                 onClick={() => updateFlaggedAnswerStatus('processed')}
-                                className="btn-primary flex items-center"
+                                className="btn-primary flex items-center justify-center"
                             >
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Mark as Processed

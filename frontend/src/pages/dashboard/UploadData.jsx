@@ -142,7 +142,7 @@ export default function UploadData() {
 
       const result = response.data
       if (result.status) {
-        toast.success(`${fileData.name} sent for RAG processing successfully!`)
+        // toast.success(`${fileData.name} sent for RAG processing successfully!`)
         // Update file status to processing
         setProcessingFiles(prev => new Set(prev).add(fileData.id))
       } else {
@@ -172,7 +172,7 @@ export default function UploadData() {
 
       const result = response.data
       if (result.status) {
-        toast.success(`Video link sent for RAG processing successfully!`)
+        // toast.success(`Video link sent for RAG processing successfully!`)
         // Update video link status to processing
         setProcessingVideoLinks(prev => new Set(prev).add(videoLinkData.id))
         await updateVideoLinkStatus(videoLinkData.id, 'processing')
@@ -303,14 +303,14 @@ export default function UploadData() {
           publicUrl: publicUrl,
           storage_path: fileName
         }
-        console.log(newFile)
+
         toast.success(`${file.name} uploaded successfully!`)
 
         // Send to Flask backend for RAG processing
         await processFileForRAG(newFile)
       }
 
-      toast.success(`${acceptedFiles.length} file(s) uploaded and sent for RAG processing!`)
+      // toast.success(`${acceptedFiles.length} file(s) uploaded and sent for RAG processing!`)
 
       // Refresh the file list
       fetchFiles()
@@ -548,20 +548,20 @@ export default function UploadData() {
             Refresh
           </button>
         </div>
-        <div className="flex space-x-3 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="flex-1">
             <input
               type="url"
               value={newVideoLink}
               onChange={handleVideoLinkChange}
               placeholder="Enter YouTube, Vimeo, or other video URL"
-              className="input-field"
+              className="input-field w-full"
             />
           </div>
           <button
             onClick={addVideoLink}
             disabled={!newVideoLink.trim() || !isValidUrl}
-            className="btn-primary px-6"
+            className="btn-primary px-6 w-full sm:w-auto"
           >
             Add Link
           </button>
@@ -570,12 +570,12 @@ export default function UploadData() {
         {videoLinks.length > 0 && (
           <div className="space-y-2">
             {videoLinks.map((link) => (
-              <div key={link.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Video className="w-5 h-5 text-red-500" />
-                  <div className="flex-1">
+              <div key={link.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg gap-3">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <Video className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{link.url}</p>
-                    <div className="flex items-center space-x-2 mt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mt-1">
                       <span className="text-xs text-gray-500">Added: {link.addedAt}</span>
                       <div className="flex items-center">
                         {getStatusIcon(link.status)}
@@ -584,7 +584,7 @@ export default function UploadData() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-shrink-0">
 
                   <button
                     onClick={() => removeVideoLink(link.id)}
@@ -619,23 +619,23 @@ export default function UploadData() {
             Refresh
           </button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   File
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Size
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Uploaded
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -643,7 +643,7 @@ export default function UploadData() {
             <tbody className="bg-white divide-y divide-gray-200">
               {allFiles.map((file) => (
                 <tr key={file.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {getFileIcon(file.type)}
                       <div className="ml-3">
@@ -658,7 +658,7 @@ export default function UploadData() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {file.uploadedAt}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {getStatusIcon(file.status)}
                       <span className="ml-2 text-sm text-gray-900 capitalize">{file.status}</span>
