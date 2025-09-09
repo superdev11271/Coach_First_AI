@@ -12,25 +12,31 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-proxy_url = os.getenv("PROXY_URL")
-os.environ["HTTP_PROXY"] = proxy_url
-os.environ["HTTPS_PROXY"] = proxy_url
-openai.proxy = {
-    "http": proxy_url,
-    "https": proxy_url,
-}
+mode = os.getenv("MODE")
+if mode == "develop":
+    proxy_url = os.getenv("PROXY_URL")
+    os.environ["HTTP_PROXY"] = proxy_url
+    os.environ["HTTPS_PROXY"] = proxy_url
+    openai.proxy = {
+        "http": proxy_url,
+        "https": proxy_url,
+    }
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 os.environ["HTTP_PROXY"] = ""
 os.environ["HTTPS_PROXY"] = ""
-ytt_api = YouTubeTranscriptApi(
-    proxy_config=GenericProxyConfig(
-        http_url=proxy_url,
-        https_url=proxy_url,
+if mode == "develop":
+    ytt_api = YouTubeTranscriptApi(
+        proxy_config=GenericProxyConfig(
+            http_url=proxy_url,
+            https_url=proxy_url,
+        )
     )
-)
+else:
+    ytt_api = YouTubeTranscriptApi()
+
 
 def embed_text(text):
     """Get OpenAI embedding for a chunk of text"""
