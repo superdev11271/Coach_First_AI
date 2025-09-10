@@ -4,15 +4,13 @@ import tempfile
 import fitz
 import docx2txt
 import threading
-from utils import embed_text, supabase, ytt_api
+from utils import embed_text, supabase, ytt_api, is_bot_share
 from flask import Flask, request, jsonify
 import re
 import edoc
 from PIL import Image
 import pytesseract
 from flask_cors import CORS
-
-
 
 def is_youtube_url(url):
     # Regex to match common YouTube URL patterns
@@ -242,7 +240,7 @@ flask_app = Flask("Coaching-AI")
 CORS(flask_app)
 
 
-@flask_app.route("/process-file", methods=["POST"])
+@flask_app.route("/api/process-file", methods=["POST"])
 def process_file_request():
     data = request.json
     
@@ -259,7 +257,7 @@ def process_file_request():
         "status": "success"
     })
 
-@flask_app.route("/process-video-link", methods=["POST"])
+@flask_app.route("/api/process-video-link", methods=["POST"])
 def process_link_request():
     data = request.json
     
@@ -277,7 +275,7 @@ def process_link_request():
     })
 
 
-@flask_app.route("/update-embedding", methods=["POST"])
+@flask_app.route("/api/update-embedding", methods=["POST"])
 def process_update_embedding():
     data = request.json
     
@@ -285,6 +283,17 @@ def process_update_embedding():
     
     process_update_embedding_in_thread(document_id, callback=on_update_embedding_complete)
 
+    return jsonify({
+        "status": "success"
+    })
+
+@flask_app.route("/api/update-bot-settings", methods=["POST"])
+
+def process_update_bot_mode():
+    data = request.json
+    is_bot = data.get("is_bot")
+    with is_bot_share.get_lock():
+        is_bot_share.value = int(is_bot)
     return jsonify({
         "status": "success"
     })

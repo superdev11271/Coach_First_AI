@@ -50,10 +50,10 @@ def chat_with_bot(chat_id, user, question):
     result_msg = response.choices[0].message.content
 
     document_ids = [doc['id'] for doc in references]
-
+    fullname = f"{user.first_name or ''} {user.last_name or ''}".strip()
     data = [{
                 "username": user.username,
-                "fullname": user.first_name,
+                "fullname": fullname,
                 "user_id": user.id,
                 "chat_id": chat_id,
                 "role": "user",
@@ -61,9 +61,9 @@ def chat_with_bot(chat_id, user, question):
                 "document_ids":[]
             },
             {
-                "username": "",
+                "username": None,
                 "fullname": "Coaching AI Bot",
-                "user_id": "",
+                "user_id": None,
                 "chat_id": chat_id,
                 "role": "bot",
                 "message": result_msg,

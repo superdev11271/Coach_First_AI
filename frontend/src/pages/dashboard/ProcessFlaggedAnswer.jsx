@@ -57,7 +57,7 @@ export default function ProcessFlaggedAnswer() {
     }
     const updateFlaggedEmbedding = async (documentId) => {
         try {
-            const response = await axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/update-embedding', {
+            const response = await axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/api/update-embedding', {
                 document_id: documentId
             })
 

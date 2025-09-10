@@ -7,11 +7,10 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from telegram.constants import ChatAction
 from multiprocessing import Process
 from chat_agent import chat_with_bot
-from utils import supabase
+from utils import supabase, ADMIN_ID, user_metadata, is_bot_share
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-
 
 async def typing_action(chat_id: int, context: ContextTypes.DEFAULT_TYPE, stop_event: asyncio.Event):
     """Background task: repeatedly send typing action until stopped."""
@@ -29,7 +28,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     print(f"Received from {user.first_name} (@{user.username}): {text}")
-
+    is_bot = context.bot_data["is_bot"]
+    if is_bot.value == 0:
+        await update.message.reply_text(f"AI bot is not working now. Please contact with coach({user_metadata["telegram_id"]}).")
+        return
     # This will hold the result
     result = {}
 
@@ -48,19 +50,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print("Typing action error:", e)
 
-    # Wait for thread to finish (should already be done)
     thread.join()
-    print(result['answer'])
     # Send the answer
-    await update.message.reply_text(result['answer'])
+    if result['answer'] != "":
+        await update.message.reply_text(result['answer'])
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
+    if update.message.from_user.username != user_metadata["telegram_id"][1:]:
+        await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
+    else:
+        supabase.auth.admin.update_user_by_id(
+            ADMIN_ID,
+            {
+                "user_metadata": {
+                    "chat_id": update.effective_chat.id
+                }
+            }
+        )
+        await update.message.reply_text("Hello! I am coach-firat AI bot for admin. Send /help for commands.")
 
 async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        if update.message.from_user.id != 7113794985:
+        if update.message.from_user.username != user_metadata["telegram_id"][1:]:
             return
         histories = supabase.table("chat_history")\
                     .select("id, username,role, message, document_ids")\
@@ -85,7 +97,7 @@ async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.id != 7113794985:
+    if update.message.from_user.username != user_metadata["telegram_id"][1:]:
         return
     chat_id = update.effective_chat.id
     try:
@@ -102,15 +114,33 @@ async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.bot.send_message(chat_id=chat_id, text="Now you can't see history")
 
 async def takeover(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.id != 7113794985:
+    if update.message.from_user.username != user_metadata["telegram_id"][1:]:
         await update.message.reply_text("Hello! I am coach-firat AI bot.")
         return
-    await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
+    
+    is_bot = context.bot_data["is_bot"]
+    n_is_bot = False if is_bot.value == 1 else True
+    supabase.auth.admin.update_user_by_id(
+            ADMIN_ID,
+            {
+                "user_metadata": {
+                    "is_bot": n_is_bot
+                }
+            }
+        )
+    with is_bot.get_lock():
+        is_bot.value = 1 if n_is_bot else 0
+
+    if n_is_bot:
+        await update.message.reply_text("Bot is working now.")
+    else:            
+        await update.message.reply_text("Bot is not working. You have to handle user messages.")
+    
 
 
 # Handler for /help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.id != 7113794985:
+    if update.message.from_user.username != user_metadata["telegram_id"][1:]:
         await update.message.reply_text("""
                                     Available commands:\n
                                     /start - start bot\n
@@ -127,8 +157,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                     
                                     """)
 
-def run_telegram_bot():
+def run_telegram_bot(shared_flag):
     telegram_app = Application.builder().token(TELEGRAM_TOKEN).build()
+    telegram_app.bot_data["is_bot"] = shared_flag
+
     telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     telegram_app.add_handler(CommandHandler("start", start))
     telegram_app.add_handler(CommandHandler("help", help_command))
@@ -140,8 +172,9 @@ def run_telegram_bot():
     print("Telegram Bot is started!")
     telegram_app.run_polling()
 
-def run_bot_in_thread():    
-    p = Process(target=run_telegram_bot)
+def run_bot_in_thread():
+    
+    p = Process(target=run_telegram_bot, args=(is_bot_share,))
     p.start()
 
 if __name__ == "__main__":

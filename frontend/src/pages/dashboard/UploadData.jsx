@@ -128,7 +128,7 @@ export default function UploadData() {
   // Call Flask backend for RAG processing
   const processFileForRAG = async (fileData) => {
     try {
-      const response = await axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/process-file', {
+      const response = await axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/api/process-file', {
         file_path: fileData.publicUrl,
         file_name: fileData.name,
         file_type: fileData.type,
@@ -160,7 +160,7 @@ export default function UploadData() {
 
   const processVideoLinkForRAG = async (videoLinkData) => {
     try {
-      const response = await axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/process-video-link', {
+      const response = await axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/api/process-video-link', {
         video_url: videoLinkData.url,
         user_id: user?.id,
         video_link_id: videoLinkData.id

@@ -12,9 +12,10 @@ import {
   X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import axios from 'axios'
 
 export default function Settings() {
-  const { user, updateProfile, updatePassword } = useAuth()
+  const { user, updateProfile, updatePassword, refreshUser } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
   const [loading, setLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
@@ -95,6 +96,9 @@ export default function Settings() {
       const { error } = await updateProfile({
         is_bot: botSettings.mode
       })
+      axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/api/update-bot-settings', {
+        is_bot: botSettings.mode
+      })
       if (!error) {
         setOriginalBotSettings({ ...botSettings })
         setBotSettingsChanged(false)
@@ -110,6 +114,32 @@ export default function Settings() {
   const handleBotSettingsCancel = () => {
     setBotSettings({ ...originalBotSettings })
     setBotSettingsChanged(false)
+  }
+
+  const handleTabChange = async (tabId) => {
+    setActiveTab(tabId)
+    
+    // Fetch fresh profile data when Bot settings tab is clicked
+    if (tabId === 'bot') {
+      try {
+        const refreshedUser = await refreshUser()
+        if (refreshedUser) {
+          // Update bot settings with fresh data
+          const freshBotSettings = {
+            mode: refreshedUser.user_metadata?.is_bot !== false,
+            autoResponse: true
+          }
+          setBotSettings(freshBotSettings)
+          setOriginalBotSettings({
+            mode: refreshedUser.user_metadata?.is_bot !== false
+          })
+          setBotSettingsChanged(false)
+        }
+      } catch (error) {
+        console.error('Error refreshing user data:', error)
+        toast.error('Failed to refresh profile data')
+      }
+    }
   }
 
   const handlePasswordSave = async () => {
@@ -430,7 +460,7 @@ export default function Settings() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                     activeTab === tab.id
                       ? 'bg-primary-50 text-primary-700 border border-primary-200'

@@ -284,6 +284,33 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const refreshUser = async () => {
+    try {
+      // First get the current session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
+        setUser(null)
+        return null
+      }
+
+      // Then fetch the updated user data from the database
+      const { data: updatedUser, error } = await supabase.auth.getUser()
+      if (error) {
+        console.error('Error fetching updated user:', error)
+        // Fallback to session user if getUser fails
+        setUser(session.user)
+        return session.user
+      }
+
+      // Update the user state with the fresh data
+      setUser(updatedUser.user)
+      return updatedUser.user
+    } catch (error) {
+      console.error('Error refreshing user:', error)
+      return null
+    }
+  }
+
   const value = {
     user,
     loading,
@@ -295,6 +322,7 @@ export const AuthProvider = ({ children }) => {
     updatePassword,
     updateProfile,
     getUserProfile,
+    refreshUser,
     supabase
   }
 
