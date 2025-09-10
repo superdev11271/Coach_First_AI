@@ -57,7 +57,7 @@ export default function ViewLogs() {
         const userMap = new Map()
         
         data.forEach(message => {
-          if (!userMap.has(message.user_id)) {
+          if (!userMap.has(message.user_id) && message.user_id != null) {
             userMap.set(message.user_id, {
               user_id: message.user_id,
               chat_id: message.chat_id,
@@ -67,7 +67,7 @@ export default function ViewLogs() {
               lastMessageTime: message.created_at,
               messageCount: 1
             })
-          } else {
+          } else if (message.user_id != null) {
             const user = userMap.get(message.user_id)
             user.messageCount += 1
             // Update last message if this one is more recent
@@ -432,4 +432,3 @@ export default function ViewLogs() {
     </div>
   )
 }
-
