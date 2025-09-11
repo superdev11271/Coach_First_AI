@@ -238,7 +238,8 @@ def process_update_embedding_in_thread(document_id, callback=None):
 
 flask_app = Flask("Coaching-AI")
 # CORS(flask_app)
-CORS(flask_app, resources={r"/api/*": {"origins": "*"}})
+CORS(flask_app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+
 
 
 @flask_app.route("/api/process-file", methods=["POST"])
