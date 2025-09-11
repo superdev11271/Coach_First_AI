@@ -22,7 +22,7 @@ export default function Overview() {
   const fetchStats = async () => {
     try {
       setLoading(true)
-      
+
       // Call the RPC function to get all counts in one query
       const { data, error } = await supabase
         .rpc('get_dashboard_counts')
@@ -35,32 +35,32 @@ export default function Overview() {
 
       if (data && data.length > 0) {
         const counts = data[0]
-        
+
         // Update stats with real data from RPC
         setStats([
-          { 
-            name: 'Total Users', 
-            value: counts.unique_users_count.toString(), 
-            icon: Users, 
-            color: 'from-blue-500 to-cyan-500' 
+          {
+            name: 'Total Users',
+            value: counts.unique_users_count.toString(),
+            icon: Users,
+            color: 'from-blue-500 to-cyan-500'
           },
-          { 
-            name: 'Documents', 
-            value: counts.documents_count.toString(), 
-            icon: FileText, 
-            color: 'from-green-500 to-emerald-500' 
+          {
+            name: 'Documents',
+            value: counts.documents_count.toString(),
+            icon: FileText,
+            color: 'from-green-500 to-emerald-500'
           },
-          { 
-            name: 'Videos', 
-            value: counts.video_links_count.toString(), 
-            icon: Video, 
-            color: 'from-purple-500 to-pink-500' 
+          {
+            name: 'Videos',
+            value: counts.video_links_count.toString(),
+            icon: Video,
+            color: 'from-purple-500 to-pink-500'
           },
-          { 
-            name: 'Flagged Answers', 
-            value: counts.flagged_answers_count.toString(), 
-            icon: Flag, 
-            color: 'from-orange-500 to-red-500' 
+          {
+            name: 'Flagged Answers',
+            value: counts.flagged_answers_count.toString(),
+            icon: Flag,
+            color: 'from-orange-500 to-red-500'
           },
         ])
       }
@@ -89,10 +89,10 @@ export default function Overview() {
       if (data && data.length > 0) {
         // Group by user_id and get unique users with their latest activity
         const userMap = new Map()
-        
+
         data.forEach(message => {
-          if (!userMap.has(message.user_id) || 
-              new Date(message.created_at) > new Date(userMap.get(message.user_id).lastActiveRaw)) {
+          if ((!userMap.has(message.user_id) ||
+            new Date(message.created_at) > new Date(userMap.get(message.user_id).lastActiveRaw)) && message.user_id != null) {
             userMap.set(message.user_id, {
               id: message.user_id,
               name: message.fullname,
@@ -108,7 +108,7 @@ export default function Overview() {
         const uniqueUsers = Array.from(userMap.values())
           .sort((a, b) => new Date(b.lastActiveRaw) - new Date(a.lastActiveRaw))
           .slice(0, 5)
-        
+
         setRecentUsers(uniqueUsers)
       }
     } catch (error) {
@@ -231,9 +231,8 @@ export default function Overview() {
                         {user.name.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
-                    <span className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
-                      user.status === 'online' ? 'bg-green-400' : 'bg-gray-400'
-                    }`}></span>
+                    <span className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-green-400' : 'bg-gray-400'
+                      }`}></span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
@@ -308,7 +307,7 @@ export default function Overview() {
       <div className="card flex-shrink-0">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button 
+          <button
             onClick={() => navigate('/dashboard/upload')}
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
           >
@@ -318,8 +317,8 @@ export default function Overview() {
               <p className="text-sm text-gray-500">Add new coaching materials</p>
             </div>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => navigate('/dashboard/logs')}
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
           >
@@ -329,8 +328,8 @@ export default function Overview() {
               <p className="text-sm text-gray-500">Check conversation history</p>
             </div>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => navigate('/dashboard/flagged')}
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
           >
@@ -340,8 +339,8 @@ export default function Overview() {
               <p className="text-sm text-gray-500">Review flagged responses</p>
             </div>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => navigate('/dashboard/export')}
             className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
           >
