@@ -1,6 +1,7 @@
-from main import flask_app  # Import your Flask app from main.py
+from main import start_services
+
+# Start both Flask app and Telegram bot
+flask_app = start_services()
 
 if __name__ == "__main__":
     flask_app.run()
-
-    
