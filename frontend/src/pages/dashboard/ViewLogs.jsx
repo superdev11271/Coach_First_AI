@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { 
-  Users, 
-  Calendar, 
-  Search, 
+import {
+  Users,
+  Calendar,
+  Search,
   MoreVertical,
   Phone,
   Clock,
@@ -39,7 +39,7 @@ export default function ViewLogs() {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
-      
+
       // Get unique users with their latest message info
       const { data, error } = await supabase
         .from('chat_history')
@@ -55,9 +55,9 @@ export default function ViewLogs() {
       if (data && data.length > 0) {
         // Group by user_id and get unique users
         const userMap = new Map()
-        
+
         data.forEach(message => {
-          if (!userMap.has(message.user_id) && message.user_id != null) {
+          if (!userMap.has(message.chat_id)) {
             userMap.set(message.user_id, {
               user_id: message.user_id,
               chat_id: message.chat_id,
@@ -67,8 +67,8 @@ export default function ViewLogs() {
               lastMessageTime: message.created_at,
               messageCount: 1
             })
-          } else if (message.user_id != null) {
-            const user = userMap.get(message.user_id)
+          } else {
+            const user = userMap.get(message.chat_id)
             user.messageCount += 1
             // Update last message if this one is more recent
             if (new Date(message.created_at) > new Date(user.lastMessageTime)) {
@@ -95,11 +95,11 @@ export default function ViewLogs() {
 
     try {
       setLoadingMessages(true)
-      
+
       const { data, error } = await supabase
         .from('chat_history')
         .select('*')
-        .eq('user_id', userId)
+        .eq('chat_id', userId)
         .order('created_at', { ascending: true })
 
       if (error) {
@@ -129,10 +129,10 @@ export default function ViewLogs() {
 
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    
+
     return filteredUsers.filter(user => {
       const lastMessageDate = new Date(user.lastMessageTime)
-      
+
       switch (selectedPeriod) {
         case 'today':
           return lastMessageDate >= today
@@ -154,10 +154,10 @@ export default function ViewLogs() {
 
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    
+
     return chatMessages.filter(message => {
       const messageDate = new Date(message.created_at)
-      
+
       switch (selectedPeriod) {
         case 'today':
           return messageDate >= today
@@ -230,7 +230,7 @@ export default function ViewLogs() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
-          
+
           {/* Period Filter */}
           <div className="mb-3">
             <label className="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
@@ -277,9 +277,8 @@ export default function ViewLogs() {
               <div
                 key={user.user_id}
                 onClick={() => handleUserSelect(user)}
-                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedUser?.user_id === user.user_id ? 'bg-primary-50 border-primary-200' : ''
-                }`}
+                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${selectedUser?.user_id === user.user_id ? 'bg-primary-50 border-primary-200' : ''
+                  }`}
               >
                 <div className="flex items-center space-x-3">
                   <div className="relative">
@@ -358,54 +357,51 @@ export default function ViewLogs() {
                     key={message.id}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                     <div className={`flex items-start space-x-2 ${
-                       message.role === 'bot' ? 'max-w-full sm:max-w-2xl lg:max-w-3xl' : 'max-w-full sm:max-w-xs lg:max-w-md'
-                     }`}>
-                       {message.role === 'bot' && (
-                         <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                           <Bot className="w-3 h-3 text-white" />
-                         </div>
-                       )}
-                       
-                       <div
-                         className={`px-4 py-2 rounded-lg w-full ${
-                           message.role === 'user'
-                             ? 'bg-primary-600 text-white'
-                             : 'bg-white text-gray-900 border border-gray-200'
-                         }`}
-                       >
-                         {message.role === 'bot' ? (
-                           <div className="text-sm prose prose-sm max-w-none w-full">
-                             <ReactMarkdown
-                               components={{
-                                 // Custom styling for markdown elements
-                                 p: ({ children }) => <p className="mb-2 last:mb-0 w-full">{children}</p>,
-                                 h1: ({ children }) => <h1 className="text-lg font-bold mb-2 w-full">{children}</h1>,
-                                 h2: ({ children }) => <h2 className="text-base font-bold mb-2 w-full">{children}</h2>,
-                                 h3: ({ children }) => <h3 className="text-sm font-bold mb-1 w-full">{children}</h3>,
-                                 ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 w-full">{children}</ul>,
-                                 ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 w-full">{children}</ol>,
-                                 li: ({ children }) => <li className="text-sm w-full">{children}</li>,
-                                 code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono w-full break-all">{children}</code>,
-                                 pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs font-mono overflow-x-auto mb-2 w-full">{children}</pre>,
-                                 blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-3 italic mb-2 w-full">{children}</blockquote>,
-                                 strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                                 em: ({ children }) => <em className="italic">{children}</em>,
-                                 a: ({ children, href }) => <a href={href} className="text-blue-600 hover:underline break-all" target="_blank" rel="noopener noreferrer">{children}</a>
-                               }}
-                             >
-                               {message.message}
-                             </ReactMarkdown>
-                           </div>
-                         ) : (
-                           <p className="text-sm whitespace-pre-line w-full">{message.message}</p>
-                         )}
-                         <p className={`text-xs mt-1 w-full ${
-                           message.role === 'user' ? 'text-primary-100' : 'text-gray-500'
-                         }`}>
-                           {new Date(message.created_at).toLocaleString()}
-                         </p>
-                       </div>
+                    <div className={`flex items-start space-x-2 ${message.role === 'bot' ? 'max-w-full sm:max-w-2xl lg:max-w-3xl' : 'max-w-full sm:max-w-xs lg:max-w-md'
+                      }`}>
+                      {message.role === 'bot' && (
+                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                          <Bot className="w-3 h-3 text-white" />
+                        </div>
+                      )}
+
+                      <div
+                        className={`px-4 py-2 rounded-lg w-full ${message.role === 'user'
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white text-gray-900 border border-gray-200'
+                          }`}
+                      >
+                        {message.role === 'bot' ? (
+                          <div className="text-sm prose prose-sm max-w-none w-full">
+                            <ReactMarkdown
+                              components={{
+                                // Custom styling for markdown elements
+                                p: ({ children }) => <p className="mb-2 last:mb-0 w-full">{children}</p>,
+                                h1: ({ children }) => <h1 className="text-lg font-bold mb-2 w-full">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-base font-bold mb-2 w-full">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-sm font-bold mb-1 w-full">{children}</h3>,
+                                ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 w-full">{children}</ul>,
+                                ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 w-full">{children}</ol>,
+                                li: ({ children }) => <li className="text-sm w-full">{children}</li>,
+                                code: ({ children }) => <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono w-full break-all">{children}</code>,
+                                pre: ({ children }) => <pre className="bg-gray-100 p-2 rounded text-xs font-mono overflow-x-auto mb-2 w-full">{children}</pre>,
+                                blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-3 italic mb-2 w-full">{children}</blockquote>,
+                                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                                em: ({ children }) => <em className="italic">{children}</em>,
+                                a: ({ children, href }) => <a href={href} className="text-blue-600 hover:underline break-all" target="_blank" rel="noopener noreferrer">{children}</a>
+                              }}
+                            >
+                              {message.message}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="text-sm whitespace-pre-line w-full">{message.message}</p>
+                        )}
+                        <p className={`text-xs mt-1 w-full ${message.role === 'user' ? 'text-primary-100' : 'text-gray-500'
+                          }`}>
+                          {new Date(message.created_at).toLocaleString()}
+                        </p>
+                      </div>
 
                       {message.role === 'user' && (
                         <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
