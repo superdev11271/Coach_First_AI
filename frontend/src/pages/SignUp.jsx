@@ -35,12 +35,12 @@ export default function SignUp() {
     e.preventDefault()
     
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match')
+      // alert('Passwords do not match')
       return
     }
 
     if (!validateTelegramId(formData.telegramId)) {
-      alert('Please enter a valid Telegram ID (e.g., @username)')
+      // alert('Please enter a valid Telegram ID (e.g., @username)')
       return
     }
 

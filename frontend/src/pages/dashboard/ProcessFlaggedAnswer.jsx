@@ -177,9 +177,6 @@ export default function ProcessFlaggedAnswer() {
 
     // Remove document
     const removeDocument = async (docId) => {
-        if (!confirm('Are you sure you want to remove this document?')) {
-            return
-        }
 
         try {
             // Remove document from flagged answer's document_ids array

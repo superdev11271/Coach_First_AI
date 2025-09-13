@@ -767,7 +767,7 @@ export default function ExportData() {
                           <div className="text-sm font-medium text-gray-900">{item.fullname}</div>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">@{item.username}</div>
+                          <div className="text-sm text-gray-500">{item.username}</div>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadge(item.role)}`}>

@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from telegram.constants import ChatAction
 from multiprocessing import Process
 from chat_agent import chat_with_bot
-from utils import supabase, ADMIN_ID, user_metadata
+from utils import supabase, ADMIN_ID
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -31,7 +31,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     share_ns = context.bot_data["share_ns"]
     is_bot = share_ns.is_bot
     telegram_username = share_ns.telegram_username
-    print(is_bot, telegram_username)
+    
     if is_bot == False:
         await update.message.reply_text(f"AI bot is not working now. Please contact with coach({telegram_username}).")
         return
@@ -79,6 +79,7 @@ async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         share_ns = context.bot_data["share_ns"]
         telegram_username = share_ns.telegram_username
+        chat_id = update.effective_chat.id
         if update.message.from_user.username != telegram_username[1:]:
             return
         histories = supabase.table("chat_history")\
@@ -98,6 +99,7 @@ async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
         item = histories.data[index]
         supabase.table("flagged_answers").insert({"question":histories.data[index - 1]["message"], "answer":item["message"], "document_ids":item["document_ids"]}).execute()
         print("successfully flaged!")
+        await context.bot.send_message(chat_id=chat_id, text="successfully flaged!")
         
     except Exception as e:
         print("Typing action error:", e)
@@ -120,7 +122,7 @@ async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
             prefix = f"👤{msg["username"]}: " if msg["role"] == "user" else "🤖 Bot: "
             await context.bot.send_message(chat_id=chat_id, text=prefix + msg["message"])
     except:
-        context.bot.send_message(chat_id=chat_id, text="Now you can't see history")
+        await context.bot.send_message(chat_id=chat_id, text="Now you can't see history")
 
 async def takeover(update: Update, context: ContextTypes.DEFAULT_TYPE):
     share_ns = context.bot_data["share_ns"]
