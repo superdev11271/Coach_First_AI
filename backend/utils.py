@@ -5,7 +5,6 @@ from openai import OpenAI
 import openai
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.proxies import GenericProxyConfig
-from multiprocessing import Value
 
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -26,7 +25,6 @@ if mode == "develop":
         "https": proxy_url,
     }
 
-is_bot_share = Value('i', 1 if user_metadata["is_bot"] else 0)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 os.environ["HTTP_PROXY"] = ""

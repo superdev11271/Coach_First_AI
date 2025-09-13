@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from telegram.constants import ChatAction
 from multiprocessing import Process
 from chat_agent import chat_with_bot
-from utils import supabase, ADMIN_ID, user_metadata, is_bot_share
+from utils import supabase, ADMIN_ID, user_metadata
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -28,9 +28,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
     print(f"Received from {user.first_name} (@{user.username}): {text}")
-    is_bot = context.bot_data["is_bot"]
-    if is_bot.value == 0:
-        await update.message.reply_text(f"AI bot is not working now. Please contact with coach({user_metadata["telegram_id"]}).")
+    share_ns = context.bot_data["share_ns"]
+    is_bot = share_ns.is_bot
+    telegram_username = share_ns.telegram_username
+    print(is_bot, telegram_username)
+    if is_bot == False:
+        await update.message.reply_text(f"AI bot is not working now. Please contact with coach({telegram_username}).")
         return
     # This will hold the result
     result = {}
@@ -57,7 +60,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.username != user_metadata["telegram_id"][1:]:
+    share_ns = context.bot_data["share_ns"]
+    telegram_username = share_ns.telegram_username
+    if update.message.from_user.username != telegram_username[1:]:
         await update.message.reply_text("Hello! I am coach-firat AI bot. Send /help for commands.")
     else:
         supabase.auth.admin.update_user_by_id(
@@ -72,7 +77,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        if update.message.from_user.username != user_metadata["telegram_id"][1:]:
+        share_ns = context.bot_data["share_ns"]
+        telegram_username = share_ns.telegram_username
+        if update.message.from_user.username != telegram_username[1:]:
             return
         histories = supabase.table("chat_history")\
                     .select("id, username,role, message, document_ids")\
@@ -97,7 +104,9 @@ async def flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.username != user_metadata["telegram_id"][1:]:
+    share_ns = context.bot_data["share_ns"]
+    telegram_username = share_ns.telegram_username
+    if update.message.from_user.username != telegram_username[1:]:
         return
     chat_id = update.effective_chat.id
     try:
@@ -114,12 +123,14 @@ async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.bot.send_message(chat_id=chat_id, text="Now you can't see history")
 
 async def takeover(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.username != user_metadata["telegram_id"][1:]:
+    share_ns = context.bot_data["share_ns"]
+    telegram_username = share_ns.telegram_username
+    if update.message.from_user.username != telegram_username[1:]:
         await update.message.reply_text("Hello! I am coach-firat AI bot.")
         return
     
-    is_bot = context.bot_data["is_bot"]
-    n_is_bot = False if is_bot.value == 1 else True
+    share_ns = context.bot_data["share_ns"]
+    n_is_bot = False if share_ns.is_bot else True
     supabase.auth.admin.update_user_by_id(
             ADMIN_ID,
             {
@@ -128,8 +139,7 @@ async def takeover(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }
             }
         )
-    with is_bot.get_lock():
-        is_bot.value = 1 if n_is_bot else 0
+    share_ns.is_bot = n_is_bot
 
     if n_is_bot:
         await update.message.reply_text("Bot is working now.")
@@ -140,7 +150,9 @@ async def takeover(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Handler for /help command
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.from_user.username != user_metadata["telegram_id"][1:]:
+    share_ns = context.bot_data["share_ns"]
+    telegram_username = share_ns.telegram_username
+    if update.message.from_user.username != telegram_username[1:]:
         await update.message.reply_text("""
                                     Available commands:\n
                                     /start - start bot\n
@@ -157,10 +169,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                     
                                     """)
 
-def run_telegram_bot(shared_flag):
+def run_telegram_bot(share_ns):
     telegram_app = Application.builder().token(TELEGRAM_TOKEN).build()
-    telegram_app.bot_data["is_bot"] = shared_flag
-
+    telegram_app.bot_data["share_ns"] = share_ns
     telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     telegram_app.add_handler(CommandHandler("start", start))
     telegram_app.add_handler(CommandHandler("help", help_command))
@@ -172,9 +183,9 @@ def run_telegram_bot(shared_flag):
     print("Telegram Bot is started!")
     telegram_app.run_polling()
 
-def run_bot_in_thread():
+def run_bot_in_thread(ns):
     
-    p = Process(target=run_telegram_bot, args=(is_bot_share,))
+    p = Process(target=run_telegram_bot, args=(ns,))
     p.start()
 
 if __name__ == "__main__":

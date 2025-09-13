@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Lock, 
-  Save, 
-  Bot, 
+import {
+  User,
+  Mail,
+  Phone,
+  Lock,
+  Save,
+  Bot,
   MessageCircle,
   Shield,
   X
@@ -69,10 +69,10 @@ export default function Settings() {
       [setting]: value
     }
     setBotSettings(newSettings)
-    
+
     // Check if settings have changed from original
-    const hasChanged = newSettings.mode !== originalBotSettings.mode || 
-                      newSettings.autoResponse !== originalBotSettings.autoResponse
+    const hasChanged = newSettings.mode !== originalBotSettings.mode ||
+      newSettings.autoResponse !== originalBotSettings.autoResponse
     setBotSettingsChanged(hasChanged)
   }
 
@@ -83,6 +83,7 @@ export default function Settings() {
       if (!error) {
         toast.success('Profile updated successfully!')
       }
+      axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/api/update-bot-settings')
     } catch (error) {
       toast.error('Error updating profile')
     } finally {
@@ -96,9 +97,7 @@ export default function Settings() {
       const { error } = await updateProfile({
         is_bot: botSettings.mode
       })
-      axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/api/update-bot-settings', {
-        is_bot: botSettings.mode
-      })
+      axios.post(import.meta.env.VITE_FLASK_BACKEND_URL + '/api/update-bot-settings')
       if (!error) {
         setOriginalBotSettings({ ...botSettings })
         setBotSettingsChanged(false)
@@ -118,7 +117,7 @@ export default function Settings() {
 
   const handleTabChange = async (tabId) => {
     setActiveTab(tabId)
-    
+
     // Fetch fresh profile data when Bot settings tab is clicked
     if (tabId === 'bot') {
       try {
@@ -357,7 +356,7 @@ export default function Settings() {
     <div className="space-y-6">
       <div className="card">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Bot Configuration</h3>
-        
+
         <div className="space-y-6">
           {/* Bot Mode */}
           <div>
@@ -378,7 +377,7 @@ export default function Settings() {
                   <span className="ml-2 text-xs text-gray-500">AI responds automatically</span>
                 </div>
               </label>
-              
+
               <label className="flex items-center">
                 <input
                   type="radio"
@@ -461,11 +460,10 @@ export default function Settings() {
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
-                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-primary-50 text-primary-700 border border-primary-200'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id
+                    ? 'bg-primary-50 text-primary-700 border border-primary-200'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
                 >
                   <tab.icon className="mr-3 h-5 w-5" />
                   {tab.label}

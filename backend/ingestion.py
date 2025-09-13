@@ -4,7 +4,7 @@ import tempfile
 import fitz
 import docx2txt
 import threading
-from utils import embed_text, supabase, ytt_api, is_bot_share
+from utils import embed_text, supabase, ytt_api, ADMIN_ID
 from flask import Flask, request, jsonify
 import re
 import edoc
@@ -292,10 +292,10 @@ def process_update_embedding():
 @flask_app.route("/api/update-bot-settings", methods=["POST"])
 
 def process_update_bot_mode():
-    data = request.json
-    is_bot = data.get("is_bot")
-    with is_bot_share.get_lock():
-        is_bot_share.value = int(is_bot)
+    user_metadata = supabase.auth.admin.get_user_by_id(ADMIN_ID).user.user_metadata
+    flask_app.config["ns"].is_bot = user_metadata["is_bot"]
+    flask_app.config["ns"].telegram_username = user_metadata["telegram_id"]
+
     return jsonify({
         "status": "success"
     })
