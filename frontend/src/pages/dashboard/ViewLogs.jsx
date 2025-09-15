@@ -77,9 +77,9 @@ export default function ViewLogs() {
             }
           }
         })
-
         const uniqueUsers = Array.from(userMap.values())
-        setUsers(uniqueUsers)
+        const filteredUsers = uniqueUsers.filter(item => item.user_id != null);
+        setUsers(filteredUsers)
       }
     } catch (error) {
       console.error('Error fetching users:', error)
