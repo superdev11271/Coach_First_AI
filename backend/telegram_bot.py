@@ -119,7 +119,9 @@ async def transcript(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     .execute()
         # Replay each message in order
         for msg in histories.data:
-            prefix = f"👤{msg["username"]}: " if msg["role"] == "user" else "🤖 Bot: "
+            username = msg["username"]
+            role = msg["role"]
+            prefix = f"👤{username}: " if role == "user" else "🤖 Bot: "
             await context.bot.send_message(chat_id=chat_id, text=prefix + msg["message"])
     except:
         await context.bot.send_message(chat_id=chat_id, text="Now you can't see history")
